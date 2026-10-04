@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### A node still running after a stop signal writes every thread's stack
+
+- **A process still alive `STOP_DUMP_DELAY` seconds after SIGINT, SIGTERM
+  or SIGTSTP writes every thread's stack to stderr**, and one that stops
+  in time prints nothing (issue #1274).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
