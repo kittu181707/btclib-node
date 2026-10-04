@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### `net_group` reads the address octets once
+
+- **`net_group` builds the IP from the octets**, where `network_address`
+  parsed it from text at each step, which slowed the address table's load
+  (closes #1708).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
