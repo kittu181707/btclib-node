@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### `waitfornewblock` and `waitforblock` are served
+
+- **Each waits on the tip as Core's do and answers it at its `timeout` and
+  once the node stops** (closes #1656). A tip reached and left within one
+  pass of the loop is missed, which Core's wait does not.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
