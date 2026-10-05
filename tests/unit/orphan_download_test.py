@@ -450,3 +450,23 @@ def test_the_wtxid_peers_are_counted() -> None:
     """Core's `m_num_wtxid_peers`."""
     manager = make_manager([a_conn(1), a_conn(2, wtxidrelay_received=False), a_conn(3)])
     assert manager._wtxid_peer_count() == 2
+
+
+def test_the_sender_of_an_orphan_is_known_to_have_its_missing_parents() -> None:
+    """ISS 1630: Core's `AddKnownTx` on the parents, for a child sent to us."""
+    sender = a_conn(1)
+    manager = make_manager([sender])
+    parent, child = a_parent_and_child()
+    manager.mempool_rejected_tx(child, MissingPrevoutError("x"), 1, first_time=True)
+    assert parent.id in sender.known_tx_inventory
+    assert child.id not in sender.known_tx_inventory
+
+
+def test_an_orphan_whose_sender_is_gone_is_taken_in_without_recording() -> None:
+    """ISS 1630: Core records the parents `if (peer)` and goes on without."""
+    manager = make_manager([a_conn(2)])
+    _, child = a_parent_and_child()
+    refused = manager.mempool_rejected_tx(
+        child, MissingPrevoutError("x"), 1, first_time=True
+    )
+    assert refused is None
