@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### `settings.json` is read and written, with `-settings` and `-nosettings`
+
+- **`settings.json` in the chain's data directory is read and written back
+  at every start, `-settings=<path>` naming another file and `-nosettings`
+  none; its values sit above `bitcoin.conf`** (closes #1523).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
