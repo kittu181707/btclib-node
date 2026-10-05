@@ -202,6 +202,12 @@ bounds, and taken up when a parent is accepted (closes #1420).
 A parent refused for its fee and a child the same peer sent are accepted
 together when their joint feerate pays, or neither is (issue #1473).
 
+### The mempool's ancestors, descendants and spenders are served
+
+- **`getmempoolancestors`, `getmempooldescendants` and `gettxspendingprevout`
+  answer as Core's do, without `-txospenderindex`; an entry's `spentby` is
+  ordered by internal bytes, as Core's, not as displayed** (closes #1501).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
