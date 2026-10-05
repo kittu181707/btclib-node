@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### `-assumevalid` skips script verification under Core's conditions
+
+- **`-assumevalid=<hash>` skips script verification of the blocks under that
+  block, on Core's conditions, and the log says where it turns off and on**
+  (issue #1576). No hash is assumed unless given.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
