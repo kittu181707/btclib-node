@@ -208,6 +208,12 @@ together when their joint feerate pays, or neither is (issue #1473).
   answer as Core's do, without `-txospenderindex`; an entry's `spentby` is
   ordered by internal bytes, as Core's, not as displayed** (closes #1501).
 
+### `prioritisetransaction` and `getprioritisedtransactions` are served
+
+- **`prioritisetransaction` and `getprioritisedtransactions` are served: a
+  fee delta, kept for a transaction held or not, is read as its modified fee
+  and cleared by the block that holds it** (closes #1502).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
