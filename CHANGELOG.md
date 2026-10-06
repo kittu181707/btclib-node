@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### A restored coin is erased from the store when spent again
+
+- **A coin whose spend is undone after a flush fell between its creation
+  and that spend is erased from the store when it is spent again or its
+  creation is undone** (closes #1763). It stayed spendable after a restart.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
