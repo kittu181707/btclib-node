@@ -188,7 +188,7 @@ Each mirrors the Core method of the same name: `getbestblockhash`,
 `getpeerinfo`, `getconnectioncount`, `getnetworkinfo`, `getnodeaddresses`,
 `setnetworkactive`, `addnode`, `disconnectnode`, `setban`, `listbanned`,
 `clearbanned`, `getmempoolinfo`, `getmempoolentry`, `getrawmempool`,
-`getrawtransaction`, `gettxout`, `gettxoutsetinfo`,
+`getrawtransaction`, `gettxout`, `gettxoutsetinfo`, `scantxoutset`,
 `decoderawtransaction`, `testmempoolaccept`, `sendrawtransaction`,
 `ping`, `getrpcinfo`, `stop`, `help`. Core's own hidden commands --
 `addconnection`, `generatetoaddress` and `generateblock` among them --

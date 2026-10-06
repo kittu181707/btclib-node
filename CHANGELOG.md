@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### `scantxoutset` is served
+
+- **`scantxoutset` searches the UTXO set for the scripts of descriptors, as
+  Core's does, with `start`, `status` and `abort`** (closes #1406). A parse
+  error has Core's code and `btclib_wallet`'s message.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on

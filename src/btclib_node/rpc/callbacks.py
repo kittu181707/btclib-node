@@ -67,7 +67,7 @@ from btclib_node.p2p.banman import (
 from btclib_node.p2p.connection import local_services
 from btclib_node.p2p.eviction import Network, is_valid
 from btclib_node.p2p.permissions import permission_names
-from btclib_node.rpc.connection import RawJSON
+from btclib_node.rpc.connection import COIN, RawJSON, btc_amount
 from btclib_node.rpc.errors import (
     RpcError,
     bool_mismatch,
@@ -85,6 +85,7 @@ from btclib_node.rpc.mining import (
     wait_for_block_height,
 )
 from btclib_node.rpc.solver import solver
+from btclib_node.rpc.utxo_set import scan_tx_out_set
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
@@ -1430,7 +1431,7 @@ def _peer_entry(
     entry["addr_processed"] = p2p_conn.stats.addr_processed
     entry["addr_rate_limited"] = p2p_conn.stats.addr_rate_limited
     entry["permissions"] = permission_names(p2p_conn.permissions)
-    entry["minfeefilter"] = _btc_amount(p2p_conn.feefilter if relays else 0)
+    entry["minfeefilter"] = btc_amount(p2p_conn.feefilter if relays else 0)
     # Core's tables are `std::map`s, iterated in key order, and push
     # only a type with bytes counted.
     entry["bytessent_per_msg"] = dict(
@@ -2207,23 +2208,6 @@ def clear_banned(node: Node, conn: RpcConnection, _: list[Any]) -> None:
     node.p2p_manager.ban_man.clear()
 
 
-def _btc_amount(sats: int) -> RawJSON:
-    """Format a satoshi amount as Core's own exact BTC string.
-
-    Core's own `ValueFromAmount` (`src/core_io.cpp:285-296`,
-    at bitcoin/bitcoin@9be056a8a7): integer `amount / COIN` and
-    `amount % COIN`, formatted `%d.%08d` -- exact at every magnitude,
-    where a Python float division (`sats / 1e8`) serializes through
-    `repr`, which fixes no decimal places and emits exponent notation
-    (`1e-06`) at a magnitude ordinary for a feerate. A negative amount,
-    which a decoded output can carry (`CAmount` is signed), keeps its
-    sign in front, as Core's own version places it.
-    """
-    quotient, remainder = divmod(abs(sats), 100_000_000)
-    sign = "-" if sats < 0 else ""
-    return RawJSON(f"{sign}{quotient}.{remainder:08d}")
-
-
 def get_mempool_info(node: Node, conn: RpcConnection, _: list[Any]) -> dict[str, Any]:
     """Answer `getmempoolinfo` with the fields this tree backs for real.
 
@@ -2272,9 +2256,9 @@ def get_mempool_info(node: Node, conn: RpcConnection, _: list[Any]) -> dict[str,
         "size": mempool.size,
         "bytes": mempool.bytesize,
         "maxmempool": mempool.bytesize_limit,
-        "mempoolminfee": _btc_amount(mempoolminfee),
-        "minrelaytxfee": _btc_amount(node.config.min_relay_feerate.sats_per_kvbyte),
-        "incrementalrelayfee": _btc_amount(
+        "mempoolminfee": btc_amount(mempoolminfee),
+        "minrelaytxfee": btc_amount(node.config.min_relay_feerate.sats_per_kvbyte),
+        "incrementalrelayfee": btc_amount(
             mempool.incremental_relay_feerate.sats_per_kvbyte
         ),
         "unbroadcastcount": len(mempool.unbroadcast),
@@ -2303,7 +2287,7 @@ def get_tx_out_set_info(
     docstring is where `CoinStats` is argued as this tree's equivalent
     of that second path. `height`, `bestblock`, `txouts`, `bogosize`,
     `total_amount` and `muhash` come from it, and are Core's own field
-    names and units, `total_amount` in BTC through `_btc_amount` the way
+    names and units, `total_amount` in BTC through `btc_amount` the way
     `get_mempool_info`'s own `mempoolminfee` already is; `muhash` itself
     is the raw digest bytes reversed before this returns, matching
     `uint256::GetHex()`'s own convention rather than this class's
@@ -2384,7 +2368,7 @@ def get_tx_out_set_info(
         "txouts": coin_stats.transaction_output_count,
         "bogosize": coin_stats.bogo_size,
     }
-    total_amount = _btc_amount(coin_stats.total_amount)
+    total_amount = btc_amount(coin_stats.total_amount)
     if hash_type == "hash_serialized_3":
         return _serialized_hash_job(
             utxo_index, utxo_index.cursor(), node, result, total_amount
@@ -2612,7 +2596,7 @@ def _vin_to_univ(
             entry["prevout"] = {
                 "generated": coin.is_coinbase,
                 "height": coin.height,
-                "value": _btc_amount(coin.tx_out.value),
+                "value": btc_amount(coin.tx_out.value),
                 "scriptPubKey": _script_pub_key_dict(
                     coin.tx_out.script_pub_key.script, network
                 ),
@@ -2632,7 +2616,7 @@ def _vout_to_univ(tx: Tx, network: str) -> list[dict[str, Any]]:
     """
     return [
         {
-            "value": _btc_amount(tx_out.value),
+            "value": btc_amount(tx_out.value),
             "n": n,
             "scriptPubKey": _script_pub_key_dict(tx_out.script_pub_key.script, network),
         }
@@ -2675,7 +2659,7 @@ def _tx_to_univ(
     }
     if undo is not None:
         spent = sum(coin.tx_out.value for coin in undo)
-        out["fee"] = _btc_amount(spent - sum(tx_out.value for tx_out in tx.vout))
+        out["fee"] = btc_amount(spent - sum(tx_out.value for tx_out in tx.vout))
     if include_hex:
         out["hex"] = tx.serialize(include_witness=True, check_validity=False).hex()
     return out
@@ -2798,7 +2782,7 @@ def get_tx_out(
     return {
         "bestblock": active_chain[-1],
         "confirmations": confirmations,
-        "value": _btc_amount(coin.tx_out.value),
+        "value": btc_amount(coin.tx_out.value),
         "scriptPubKey": _script_pub_key_dict(
             coin.tx_out.script_pub_key.script, node.chain.name
         ),
@@ -2905,10 +2889,10 @@ def get_mempool_entry(
         "ancestorsize": entry.ancestor_size,
         "wtxid": entry.wtxid,
         "fees": {
-            "base": _btc_amount(entry.fee),
-            "modified": _btc_amount(entry.modified_fee),
-            "ancestor": _btc_amount(entry.ancestor_fees),
-            "descendant": _btc_amount(entry.descendant_fees),
+            "base": btc_amount(entry.fee),
+            "modified": btc_amount(entry.modified_fee),
+            "ancestor": btc_amount(entry.ancestor_fees),
+            "descendant": btc_amount(entry.descendant_fees),
         },
         "depends": entry.depends,
         "spentby": entry.spent_by,
@@ -3412,15 +3396,14 @@ _MEMPOOL_FULL_REASON = "mempool full"
 # `testmempoolaccept` takes. btclib-org/btclib-node#1329
 _MAX_PACKAGE_COUNT = 25
 
-# Core's own `COIN` and `MAX_MONEY` (`src/consensus/amount.h`, same
+# Core's own `MAX_MONEY` (`src/consensus/amount.h`, same
 # tag): `MoneyRange`'s own bound, what `AmountFromValue` refuses an
 # out-of-range `maxfeerate` or `maxburnamount` against.
-_COIN = 100_000_000
-_MAX_MONEY = 21_000_000 * _COIN
+_MAX_MONEY = 21_000_000 * COIN
 # Core's own `DEFAULT_MAX_RAW_TX_FEE_RATE` (`src/node/transaction.h`,
 # same tag): `sendrawtransaction` and `testmempoolaccept`'s own default
 # `maxfeerate`, 0.1 BTC/kvB.
-_DEFAULT_MAX_RAW_TX_FEE_RATE = _COIN // 10
+_DEFAULT_MAX_RAW_TX_FEE_RATE = COIN // 10
 # Core's own `DEFAULT_MAX_BURN_AMOUNT` (same file): `sendrawtransaction`'s
 # own default `maxburnamount`, zero.
 _DEFAULT_MAX_BURN_AMOUNT = 0
@@ -3524,7 +3507,7 @@ def _parse_max_fee_rate(params: list[Any], position: int) -> int:
     rate = _amount_param(
         params, position, name="maxfeerate", default=_DEFAULT_MAX_RAW_TX_FEE_RATE
     )
-    if rate >= _COIN:
+    if rate >= COIN:
         raise RpcError(
             RPCErrorCode.INVALID_PARAMETER,
             "Fee rates larger than or equal to 1BTC/kvB are not accepted",
@@ -4068,6 +4051,7 @@ callbacks = {
     "getrawtransaction": get_raw_transaction,
     "gettxout": get_tx_out,
     "gettxoutsetinfo": get_tx_out_set_info,
+    "scantxoutset": scan_tx_out_set,
     "decoderawtransaction": decode_raw_transaction,
     "testmempoolaccept": test_mempool_accept,
     "sendrawtransaction": send_raw_transaction,
@@ -4121,6 +4105,7 @@ arg_names: dict[str, tuple[str, ...]] = {
     "getrawtransaction": ("txid", "verbosity|verbose", "blockhash"),
     "gettxout": ("txid", "n", "include_mempool"),
     "gettxoutsetinfo": ("hash_type", "hash_or_height", "use_index"),
+    "scantxoutset": ("action", "scanobjects"),
     "decoderawtransaction": ("hexstring", "iswitness"),
     "testmempoolaccept": ("rawtxs", "maxfeerate"),
     "sendrawtransaction": ("hexstring", "maxfeerate", "maxburnamount"),

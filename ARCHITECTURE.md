@@ -67,6 +67,10 @@ fixes there; a thread of the call's own hashes them, reading no state of
 `Node`'s but `terminate_flag`, and the call is a generator waiting for
 it, as the others are. `stop` ends the scan at its next coin.
 
+`scantxoutset` is not: it walks the same cursor on `Node`'s thread, a step
+of coins at a time, and yields between steps. `status` and `abort` are
+served between two steps, so the scan's state needs no lock.
+
 ## The transport
 
 `src/btclib_node/p2p/transport.py` frames messages for v1 and
