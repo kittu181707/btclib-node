@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### On Windows the node finds its interface addresses
+
+- **`local_addresses` asks `GetAdaptersAddresses` through `ctypes`**, as Core
+  does, and keeps an up, non-loopback adapter's non-transient unicast
+  addresses (closes #1310). It found none there.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
