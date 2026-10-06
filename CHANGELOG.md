@@ -198,6 +198,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the two, is deleted from the store** (closes #1763). It stayed there,
   one coin more than `coin_stats` counts.
 
+### `dumptxoutset` is served
+
+- **`dumptxoutset` writes the UTXO set to a snapshot file, as Core's does,
+  at the tip or rolled back to an earlier block** (closes #1471). The file
+  is Core's `SnapshotMetadata` and coins, byte for byte.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on

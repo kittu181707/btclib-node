@@ -84,6 +84,7 @@ from btclib_node.rpc.mining import (
     get_block_template,
     wait_for_block_height,
 )
+from btclib_node.rpc.snapshot import dump_tx_out_set
 from btclib_node.rpc.solver import solver
 
 if TYPE_CHECKING:
@@ -126,6 +127,7 @@ __all__ = [
     "help_rpc",
     "invalidate_block",
     "list_banned",
+    "named_only_args",
     "ping",
     "precious_block",
     "prune_blockchain",
@@ -4068,6 +4070,7 @@ callbacks = {
     "getrawtransaction": get_raw_transaction,
     "gettxout": get_tx_out,
     "gettxoutsetinfo": get_tx_out_set_info,
+    "dumptxoutset": dump_tx_out_set,
     "decoderawtransaction": decode_raw_transaction,
     "testmempoolaccept": test_mempool_accept,
     "sendrawtransaction": send_raw_transaction,
@@ -4076,6 +4079,11 @@ callbacks = {
     "help": help_rpc,
     "getrpcinfo": get_rpc_info,
 }
+
+# The names of `arg_names` that are one options object's keys, which
+# `RPCArg::Type::OBJ_NAMED_PARAMS` makes named-only (`GetArgNames`,
+# `src/rpc/util.cpp`, at bitcoin/bitcoin@9be056a8a7, the v31.1 tag)
+named_only_args: dict[str, frozenset[str]] = {"dumptxoutset": frozenset({"rollback"})}
 
 # Each method's parameter names, in the order of its positions, as its
 # `RPCHelpMan` declares them and `CRPCCommand::argNames` carries them
@@ -4121,6 +4129,7 @@ arg_names: dict[str, tuple[str, ...]] = {
     "getrawtransaction": ("txid", "verbosity|verbose", "blockhash"),
     "gettxout": ("txid", "n", "include_mempool"),
     "gettxoutsetinfo": ("hash_type", "hash_or_height", "use_index"),
+    "dumptxoutset": ("path", "type", "options|rollback"),
     "decoderawtransaction": ("hexstring", "iswitness"),
     "testmempoolaccept": ("rawtxs", "maxfeerate"),
     "sendrawtransaction": ("hexstring", "maxfeerate", "maxburnamount"),

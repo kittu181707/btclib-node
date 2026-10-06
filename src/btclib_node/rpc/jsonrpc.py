@@ -192,8 +192,19 @@ class JsonRpcRequest:
         return reply
 
 
+def _split_position(
+    pattern: str, args_in: dict[str, Any], named_only: frozenset[str]
+) -> tuple[list[str], dict[str, Any]]:
+    """Return a position's own names and the options its `named_only` make."""
+    names = pattern.split("|")
+    options = {n: args_in.pop(n) for n in names if n in named_only and n in args_in}
+    return [n for n in names if n not in named_only], options
+
+
 def transform_named_arguments(
-    params: dict[str, Any], arg_names: tuple[str, ...]
+    params: dict[str, Any],
+    arg_names: tuple[str, ...],
+    named_only: frozenset[str] = frozenset(),
 ) -> list[Any]:
     """Map `params`' keys onto positions as `transformNamedArguments` does.
 
@@ -205,6 +216,10 @@ def transform_named_arguments(
     `args` that is not an array is dropped. Every pair `params` holds is
     read, so a key named twice is refused, as it is in Core; so is a
     position given both ways, and a key no position names.
+
+    A name in `named_only` is one of an options object's, which it
+    shares a position with: the keys given are the object at that
+    position, and the object itself given as well is refused.
 
     Core names the first unknown key its `std::unordered_map` iterates
     over, an order the C++ standard leaves to the library, so no fixed
@@ -223,8 +238,9 @@ def transform_named_arguments(
     initial_hole_size = 0
     initial_param: str | None = None
     for pattern in arg_names:
-        name = next((n for n in pattern.split("|") if n in args_in), None)
-        if name is None:
+        own, options = _split_position(pattern, args_in, named_only)
+        name = next((n for n in own if n in args_in), None)
+        if name is None and not options:
             hole += 1
             if not out:
                 initial_hole_size = hole
@@ -232,8 +248,25 @@ def transform_named_arguments(
         out.extend([None] * hole)
         hole = 0
         if initial_param is None:
-            initial_param = pattern
-        out.append(args_in.pop(name))
+            initial_param = "|".join(own)
+        if name is not None and options:
+            message = f"Parameter {name} conflicts with parameter {next(iter(options))}"
+            raise RpcError(RPCErrorCode.INVALID_PARAMETER, message)
+        out.append(args_in.pop(name) if name is not None else options)
+    out = _with_positional(out, args_in, initial_param, initial_hole_size)
+    if args_in:
+        message = f"Unknown named parameter {next(reversed(args_in))}"
+        raise RpcError(RPCErrorCode.INVALID_PARAMETER, message)
+    return out
+
+
+def _with_positional(
+    out: list[Any],
+    args_in: dict[str, Any],
+    initial_param: str | None,
+    initial_hole_size: int,
+) -> list[Any]:
+    """Return `out` with a leftover `args` array as the leading positions."""
     positional = args_in.pop("args", None)
     if isinstance(positional, list):
         if initial_param is not None and initial_hole_size < len(positional):
@@ -243,9 +276,6 @@ def transform_named_arguments(
             )
             raise RpcError(RPCErrorCode.INVALID_PARAMETER, message)
         out = positional + out[len(positional) :]
-    if args_in:
-        message = f"Unknown named parameter {next(reversed(args_in))}"
-        raise RpcError(RPCErrorCode.INVALID_PARAMETER, message)
     return out
 
 
