@@ -192,6 +192,18 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### The block template compares a package's real weight
+
+- **The weight limit counts a package at its real weight, and the sigop
+  limit is checked on its own**, as in Core's bitcoin/bitcoin#35580
+  (closes #1754).
+
+### The last block of a period is not dated before its first
+
+- **The template's time and `mintime` have BIP54's bound on every
+  network**, as in Core's bitcoin/bitcoin#35949; not consensus
+  (closes #1755).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
