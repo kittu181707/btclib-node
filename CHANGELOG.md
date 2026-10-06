@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### Undoing a spend and then its creation after a flush leaves the coin stored
+
+- **A coin whose spend and creation are both undone, with a flush between
+  the two, is deleted from the store** (closes #1763). It stayed there,
+  one coin more than `coin_stats` counts.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on

@@ -579,6 +579,11 @@ class UtxoIndex:
                 raise ChainstateInconsistencyError(err_msg)
             if out_point_bytes in self.updated_utxo_set:
                 coin = self._pop(out_point_bytes)
+                # the store holds it too where a flush fell between the
+                # creation and the spend, and the restore above staged it
+                # again
+                if self.db.get(b"utxo-" + out_point_bytes):
+                    self._mark_removed(out_point_bytes)
             else:
                 coin_data = self.db.get(b"utxo-" + out_point_bytes)
                 if not coin_data:

@@ -182,8 +182,7 @@ def test_a_rev_block_that_removes_a_pending_output_takes_it_back(
     """Undoing a still-staged creation simply drops it from updated_utxo_set.
 
     The output was never finalized, so it is in `updated_utxo_set`
-    rather than the database, and apply_rev_block pops it from there
-    without touching `removed_utxos` at all.
+    rather than the database, and apply_rev_block pops it from there.
     """
     chainstate = Chainstate(tmp_path, RegTest(), Logger(debug=True))
     utxo_index = chainstate.utxo_index
@@ -197,6 +196,38 @@ def test_a_rev_block_that_removes_a_pending_output_takes_it_back(
         RevBlock(hash=b"\x05" * 32, to_add=[], to_remove=[added])
     )
     assert key not in utxo_index.updated_utxo_set
+    chainstate.close()
+
+
+def test_a_restored_output_that_the_store_holds_is_removed_from_it(
+    tmp_path: Path,
+) -> None:
+    """Spend, flush, undo the spend, undo the creation: nothing is left.
+
+    The flush writes the creation, the spend stages its deletion, and
+    undoing the spend puts the coin back into `updated_utxo_set` while
+    the store still holds it. Undoing the creation must delete it from
+    the store as well, which `finalize` does for `removed_utxos` only.
+    """
+    chainstate = Chainstate(tmp_path, RegTest(), Logger(debug=True))
+    utxo_index = chainstate.utxo_index
+    funding = coinbase(b"\x08")
+    utxo_index.add_block(one_tx_block([funding], b"\x08" * 32), 1)
+    utxo_index.finalize()
+    out_point = OutPoint(funding.id, 0)
+    key = out_point.serialize(check_validity=False)
+    stored = chainstate.db.get(b"utxo-" + key)
+    assert stored is not None
+    coin = Coin.parse(stored, check_validity=False)
+    utxo_index.removed_utxos.add(key)  # the spend, as `add_block` stages it
+    utxo_index.apply_rev_block(
+        RevBlock(hash=b"\x09" * 32, to_add=[(out_point, coin)], to_remove=[])
+    )
+    utxo_index.apply_rev_block(
+        RevBlock(hash=b"\x08" * 32, to_add=[], to_remove=[out_point])
+    )
+    utxo_index.finalize()
+    assert chainstate.db.get(b"utxo-" + key) is None
     chainstate.close()
 
 
