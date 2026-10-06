@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### The mempool RPCs answer `vsize_adjusted` and `vsize_bip141`
+
+- **`testmempoolaccept`, `getrawmempool` with `verbose` and
+  `getmempoolentry` answer `vsize_adjusted` and `vsize_bip141` beside
+  `vsize`**, with Core 32's values, and their help names them (issue #1757).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
