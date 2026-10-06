@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### `anchors.dat` keeps the anchors across a stop with the network off, as in Core
+
+- **`setnetworkactive false` keeps the block-relay-only peers held as the
+  anchors**, written to `anchors.dat` at stop. An anchor read at start
+  stays stored while the network is off (closes #1753).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
