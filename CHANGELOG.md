@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### A `MSG_WITNESS_TX` in an `inv` is a txid announcement
+
+- **`callbacks.inv` queues one by txid from a peer that did not send
+  `wtxidrelay`**, as Core does at v31.1 (closes #1772). A wtxid-relay
+  peer's is dropped, where Core follows it (issue #1774).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
