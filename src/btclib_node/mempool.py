@@ -448,9 +448,19 @@ class Mempool:
 
     # Don't need lock because handled in same thread
     def add_tx(
-        self, tx: Tx, fee: int = 0, vsize: int | None = None, *, height: int = 0
+        self,
+        tx: Tx,
+        fee: int = 0,
+        vsize: int | None = None,
+        *,
+        height: int = 0,
+        trim: bool = True,
     ) -> bool:
         """Add `tx`, evict past the limit, and say whether it stuck.
+
+        With `trim` false nothing is evicted, and the caller calls `trim`
+        itself once it has added what it will: Core's package submission,
+        which trims once at the end.
 
         A no-op, returning `False`, for a txid already held or a
         transaction spending an outpoint one held already spends. Otherwise
@@ -505,17 +515,26 @@ class Mempool:
             return False
         self._insert(tx, fee, vsize, height)
         self._push_heap(wtxid)
-        self._evict_to_limit()
+        if trim:
+            self._evict_to_limit()
         return wtxid in self.transactions
 
+    def trim(self) -> None:
+        """Evict past the limit, Core's `LimitMempoolSize`, as `add_tx` does."""
+        self._evict_to_limit()
+
     def add_package(
-        self, members: Sequence[tuple[Tx, int, int]], *, height: int
+        self,
+        members: Sequence[tuple[Tx, int, int]],
+        *,
+        height: int,
+        trim: bool = True,
     ) -> bool:
         """Add a package's transactions, parents first, or none, and say which.
 
-        `members` are `(tx, fee, vsize)` of a parent and the child
-        paying for it, each already refused by none of
-        `main.pre_verify_package`'s checks on this very state. They are
+        `members` are `(tx, fee, vsize)` of the parents and the child
+        paying for them, each already refused by none of
+        `main.pre_verify_subpackage`'s checks on this very state. They are
         judged by their aggregate modified feerate where the mempool is over
         its limit: the others are evicted for room, worst first, as long as
         they pay less than the package, and the package is itself the
@@ -529,12 +548,16 @@ class Mempool:
         A parent of the package that an eviction takes leaves nothing to
         add, and so does a member left alone by the eviction after the
         add, where a package larger than the limit is evicted.
+
+        With `trim` false nothing is made room for or evicted: the members
+        are added, and the caller calls `trim` once it has added what it
+        will, so that no member of the call is evicted for another.
         """
         fee = sum(fee + self.delta(tx.id) for tx, fee, _ in members)
         size = sum(member[2] for member in members)
         rate = Fraction(fee, size)
         parents = {wtxid for tx, _, _ in members for wtxid in self._parents(tx)}
-        while self.bytesize + size > self.bytesize_limit and self.transactions:
+        while trim and self.bytesize + size > self.bytesize_limit and self.transactions:
             worst = self._pop_worst_wtxid()
             worst_rate = Fraction(self.modified_fee(worst), self.vsizes[worst])
             if rate < worst_rate:
@@ -549,6 +572,8 @@ class Mempool:
         for tx, member_fee, vsize in members:
             self._insert(tx, member_fee, vsize, height)
             self._push_heap(tx.hash)
+        if not trim:
+            return True
         self._evict_to_limit()
         wtxids = [tx.hash for tx, _, _ in members]
         if all(wtxid in self.transactions for wtxid in wtxids):

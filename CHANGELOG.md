@@ -214,6 +214,12 @@ together when their joint feerate pays, or neither is (issue #1473).
   fee delta, kept for a transaction held or not, is read as its modified fee
   and cleared by the block that holds it** (closes #1502).
 
+### `submitpackage` is served
+
+- **`submitpackage` answers as Core's does, but replaces nothing
+  (btclib-org/btclib-node#1334) and keeps no parent by its chunk feerate
+  (btclib-org/btclib-node#1740)** (issue #1494).
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
