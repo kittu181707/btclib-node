@@ -192,6 +192,12 @@ as a note, and its `http` and `rpc` categories are logged (issue #1307).
   the file at the merge base with `origin/main`, is refused**
   (issue btclib-org/.github#1614).
 
+### A trickle announces at most Core's cap, best-paying first
+
+- **A trickle announces 70 transactions plus 5 per 1000 queued, at most 1000,
+  best-paying first, and keeps the rest queued**, as Core v31.1 does (closes
+  #1767). Without Core's clusters, the order is the best ancestor-package feerate.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
