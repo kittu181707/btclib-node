@@ -202,6 +202,12 @@ bounds, and taken up when a parent is accepted (closes #1420).
 A parent refused for its fee and a child the same peer sent are accepted
 together when their joint feerate pays, or neither is (issue #1473).
 
+### A peer's messages are handled in the order received
+
+- **A `pong` follows the verdict on a `tx` sent before the `ping`**, as in
+  Core: its later messages wait while it has a check queued, a message
+  held or an orphan to reconsider (closes #1739). Others do not wait.
+
 ## v2026.10.4
 
 ### The attestation's signer is `reusable-attest.yml` from v2026.9.24 on
